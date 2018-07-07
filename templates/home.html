@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block page-main %}
+    {% for article in article_list %}
+        <div class="article-top">
+            <h2><a href="/blog/{{ username }}/article/{{ article.nid }}">{{ article.title }}</a></h2>
+        </div>
+        <div class="article-body">
+            <div class="media">
+                <div class="media-left">
+                    <a href="/blog/{{ article.user.username }}/">
+                        <img class="media-object" src="/media/{{ article.user.avatar }}" alt="作者头像">
+                    </a>
+                </div>
+                <div class="media-body">
+                    <h4 class="media-heading">
+                        {{ article.desc }}
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="article-footer">
+            <p>
+                <a href="/blog/{{ article.user.username }}/"><span>{{ article.user.username }}</span></a>
+                <span>发布于={{ article.create_time }}</span>
+                <span class="glyphicon glyphicon-thumbs-up">{{ article.up_count }}</span>
+                <span class="glyphicon glyphicon-comment">{{ article.comment_count }}</span>
+            </p>
+        </div>
+        <hr>
+
+    {% endfor %}
+
+    <div>
+        {{ page_html|safe }}
+    </div>
+    <!--搜索框-->
+    <p>
+        <label>搜索<input type="text" id="search_page"></label>
+        <button id="search_btn" class="btn-primary">跳转</button>
+    </p>
+{% endblock page-main %}
+
+{% block page-js %}
+    <script>
+        $(document).ready(function () {
+            $("#search_btn").click(function () {
+                search_num = $("#search_page").val();
+                new_href = "/blog/{{ request.user.username }}/?page=" + search_num;
+                location.href = new_href;
+            })
+        })
+    </script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block page-css %}
+    <link rel="stylesheet" href="/media/themes/{{ blog.theme }}">
+
+{% endblock page-css %}
+
+{% block page-main %}
+    <h1>{{ article.title }}</h1>
+    <div>
+        {{ article.articledetail.content|safe }}
+    </div>
+    <hr>
+    {# 点赞 开始 #}
+    <div id="div_digg">
+        <div class="diggit dig">
+            <span class="diggnum" id="digg_count">{{ article.up_count }}</span>
+        </div>
+        <div class="buryit dig">
+            <span class="burynum" id="bury_count">{{ article.down_count }}</span>
+        </div>
+        <div class="clear"></div>
+        <p class="diggword" id="digg_tips" style="color: red;clear:both;"></p>
+
+    </div>
+    {# 点赞 结束 #}
+
+    {# 评论区 开始 #}
+    <div class="comment-list">
+        <h3>评论列表</h3>
+        <hr>
+        <ul class="list-group">
+            {% for comment in comment_list %}
+                {% if comment.parent_comment%}
+                    {# 如果存在父评论对象 #}
+                        <p>
+                            <span>#{{ forloop.counter }}楼</span>
+                            <span>{{ comment.create_time }}</span>
+                            <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
+                        </p>
+                        <p class="well">
+                            <span>@{{ comment.parent_comment.user.username }}</span>
+                            {{ comment.content }}
+                        </p>
+                {% else %}
+                    <p>
+                        <span>#{{ forloop.counter }}楼</span>
+                        <span>{{ comment.create_time }}</span>
+                        <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
+                    </p>
+                    <li class="list-group-item">{{ comment.content }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {# 评论区 结束 #}
+
+    {# 写评论 开始 #}
+    <h3>发表评论</h3>
+    <hr>
+    <p>昵称：<label for="userName"><input type="text" id="userName" value="{{ request.user.username }}" disabled></label>
+    </p>
+    <label for="commentBody">评论内容
+        <textarea class="form-control" id="commentBody">
+    </textarea>
+    </label>
+    <input type="button" id="comment_submit" value="提交评论">
+    {# 写评论 结束 #}
+
+{% endblock page-main %}
+
+{% block page-js %}
+    <script>
+        $(document).ready(function () {
+            // 点赞/踩灭脚本
+            $("#div_digg").on("click", ".dig", function () {
+                // 思路：创建一条点赞的记录，需要的数据：user_id,article_id,is_up
+                // 注意：其中user_id和article_id可在视图逻辑中取得
+                // 点赞标记is_up
+                var isUp = ($(this).hasClass("diggit"));
+                var articleId = '{{ article.nid }}';
+                // 获取当前登录的用户
+                var userId = '{{ request.user.nid }}';
+                if (!userId) {
+                    // 为登录的用户
+                    locations.href = "/login/";
+                } else {
+                    // 登录的用户开始点赞操作
+                    $.ajax({
+
+                        url: '/updown/',
+                        type: 'POST',
+                        data: {
+                            is_up: isUp,
+                            article_id: articleId,
+                            user_id: userId
+                        },
+                        success: function (ret) {
+                            if (ret["code"]) {
+                                // 有误操作，打印提示信息
+                                $("#digg_tips").text(ret["tip"]);
+                            } else {
+                                // 正常操作
+                                // 1、数字更新
+                                if (isUp) {
+                                    var $eleUp = $("#digg_count");
+                                    $eleUp.text(+$eleUp.text() + 1);
+                                } else {
+                                    var $eleDown = $("#bury_count");
+                                    $eleDown.text(+$eleDown.text() + 1);
+                                }
+                                // 2、打印正确提示信息
+                                $("#digg_tips").text(ret["tip"]);
+                            }
+                        }
+                    })
+                }
+            });
+
+            // 发表评论脚本
+
+        })
+    </script>
+{% endblock page-js %}

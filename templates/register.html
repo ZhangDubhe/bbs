@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/mystyle.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-offset-3 col-md-6" id="register-form">
+            <form class="form-horizontal" autocomplete="off" novalidate>
+                {% csrf_token %}
+                {# 用户名 #}
+                <div class="form-group">
+                    <label for="{{ forms_obj.username.id_for_label }}"
+                           class="col-sm-2 control-label">{{ forms_obj.username.label }}</label>
+                    <div class="col-sm-10">
+                        {{ forms_obj.username }}
+                        <span class="help-block pull-right"></span>
+                    </div>
+
+                </div>
+                {# 密码 #}
+                <div class="form-group">
+                    <label for="{{ forms_obj.password.id_for_label }}"
+                           class="col-sm-2 control-label">{{ forms_obj.password.label }}</label>
+                    <div class="col-sm-10">
+                        {{ forms_obj.password }}
+                        <span class="help-block pull-right"></span>
+                    </div>
+                </div>
+                {# 确认密码 #}
+                <div class="form-group">
+                    <label for="{{ forms_obj.re_password.id_for_label }}"
+                           class="col-sm-2 control-label">{{ forms_obj.re_password.label }}</label>
+                    <div class="col-sm-10">
+                        {{ forms_obj.re_password }}
+                        <span class="help-block pull-right"></span>
+                    </div>
+                </div>
+                {# 手机号 #}
+                <div class="form-group">
+                    <label for="{{ forms_obj.phone.id_for_label }}"
+                           class="col-sm-2 control-label">{{ forms_obj.phone.label }}</label>
+                    <div class="col-sm-10">
+                        {{ forms_obj.phone }}
+                        <span class="help-block pull-right"></span>
+                    </div>
+                </div>
+                {# 头像 #}
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">头像</label>
+                    <div class="col-sm-10">
+                        <label for="id_avatar">
+                            <img src="/media/avatars/default_avatar.png" alt="头像上传" id="show-avatar">
+                            <input type="file" id="id_avatar" name="avatar" accept="image/*" style="display: none">
+                        </label>
+                        <span class="help-block pull-right"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox"> 记住我
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary btn-block" id="register_btn">Sign in</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/static/jquery-3.3.1.min.js"></script>
+<script src="/static/ajax_setup.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#register_btn").on("click", function () {
+            // 先生成一个表单对象
+            var formObj = new FormData();
+            // 向form表单对象添加键值对数据
+            formObj.append("username", $("#id_username").val());
+            formObj.append("password", $("#id_password").val());
+            formObj.append("re_password", $("#id_re_password").val());
+            formObj.append("phone", $("#id_phone").val());
+            formObj.append("avatar", $("#id_avatar")[0].files[0]);
+
+            $.ajax({
+                url: "/register/",
+                type: "POST",
+                processData: false, // 客户端不处理发送的数据
+                contentType: false, // 客户端不设置请求头
+                data: formObj,
+                success: function (ret) {
+                    if (ret["code"]) {
+                        // 验证不通过
+                        var errMsgObj = ret.data;
+                        console.log(errMsgObj);
+                        $.each(errMsgObj, function (k, v) {
+                            // k:字段名，v：报错信息的数组
+                            // 根据字段名找对应的input标签，把错误信息添加到对应的span之中
+                            $("#id_"+k).next(".help-block").text(v[0]).parent().parent().addClass("has-error");
+                        })
+                    } else {
+                        // 验证通过，跳转
+                        location.href = ret["data"] || "/login/"
+                    }
+                }
+            })
+        });
+
+        // 给每一个input标签绑定focus时间，移除当前的错误提示信息
+        $("input.form-control").on("focus",function () {
+            $(this).next(".help-block").text("").parent().parent().removeClass("has-error");
+        })
+
+        // 头像预览，change事件触发
+        $("#id_avatar").on("change",function () {
+            // 找到选中后的头像文件
+            var avatarObj = this.files[0];
+            // 读取文件的路径
+            var fileReader = new FileReader();
+            fileReader.readAsDataURL(avatarObj);
+            fileReader.onload = function () {
+                // 设置预览图片
+                $("#show-avatar").attr("src",fileReader.result);
+            };
+        })
+
+    })
+</script>
+</body>
+</html>
