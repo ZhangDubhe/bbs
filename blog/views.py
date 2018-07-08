@@ -1,4 +1,4 @@
-from django.shortcuts import render,HttpResponse,redirect
+from django.shortcuts import render, HttpResponse, redirect
 from blog import forms
 from django.contrib import auth
 from django.http import JsonResponse
@@ -12,14 +12,14 @@ def login(request):
         ret = {"code": 0}
         username = request.POST.get("username")
         password = request.POST.get("password")
-        v_code = request.POST.get("v_code","")
+        v_code = request.POST.get("v_code", "")
 
-        if v_code.upper() == request.session.get("v_code",""):
+        if v_code.upper() == request.session.get("v_code", ""):
             # 验证码正确,再验证用户输入的有效性
-            user = auth.authenticate(username=username,password=password)
+            user = auth.authenticate(username=username, password=password)
             if user:
                 # 用户名密码正确
-                auth.login(request,user)
+                auth.login(request, user)
                 ret["data"] = "/index/"
             else:
                 # 用户名或密码错误
@@ -30,25 +30,24 @@ def login(request):
             ret["code"] = 1
             ret["data"] = "验证码错误"
         return JsonResponse(ret)
-    return render(request,"login.html",{"form_obj":form_obj})
+    return render(request, "login.html", {"form_obj": form_obj})
 
 
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image, ImageDraw, ImageFont
 import random
 from . import models
 
 
 # 图片验证码
 def v_code(request):
-
     # 定义一个生成随机颜色代码的内部函数
     def get_color():
-        return random.randint(0,255),random.randint(0,255),random.randint(0,255)
+        return random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
 
     # 生成一个图片对象
     img_obj = Image.new(
         "RGB",
-        (250,35),
+        (250, 35),
         color=get_color()
     )
 
@@ -56,7 +55,7 @@ def v_code(request):
     # 生成一个画笔对象
     draw_obj = ImageDraw.Draw(img_obj)
     # 加载字体文件
-    font_obj = ImageFont.truetype("C:\my_python\bbs\static\courbi.ttf",size=28)
+    font_obj = ImageFont.truetype("static/courbi.ttf", size=28)
     # 写字
     # draw_obj.text(
     #     (0, 0),  # 位置
@@ -68,19 +67,19 @@ def v_code(request):
     # for循环5次，每次写一个随机的字符
     tmp_list = []
     for i in range(5):
-        n = str(random.randint(0,9))
-        l = chr(random.randint(97,122))
-        u = chr(random.randint(65,90))
-        r = random.choice([n,l,u])
+        n = str(random.randint(0, 9))
+        l = chr(random.randint(97, 122))
+        u = chr(random.randint(65, 90))
+        r = random.choice([n, l, u])
         tmp_list.append(r)
         draw_obj.text(
-            (i*48+20, 0), # 位置
-            r, # 内容
-            get_color(), # 颜色
+            (i * 48 + 20, 0),  # 位置
+            r,  # 内容
+            get_color(),  # 颜色
             font=font_obj
         )
     # 得到生成的随机
-    v_code_str= "".join(tmp_list)
+    v_code_str = "".join(tmp_list)
     # 注意： 不能使用全局变量保存验证码，会被覆盖
     request.session["v_code"] = v_code_str.upper()
 
@@ -99,7 +98,7 @@ def v_code(request):
         draw_obj.point([random.randint(0, width), random.randint(0, height)], fill=get_color())
         x = random.randint(0, width)
         y = random.randint(0, height)
-        draw_obj.arc((x, y, x+4, y+4), 0, 90, fill=get_color())
+        draw_obj.arc((x, y, x + 4, y + 4), 0, 90, fill=get_color())
 
     # 第一版： 将生成的图片保存到文件中
     # with open("xx.png", "wb") as f:
@@ -110,11 +109,11 @@ def v_code(request):
 
     # 第二版：直接将图片在内存中保存
     from io import BytesIO
-    tmp = BytesIO() # 生成一个io对象
-    img_obj.save(tmp,"png")
+    tmp = BytesIO()  # 生成一个io对象
+    img_obj.save(tmp, "png")
 
     data = tmp.getvalue()
-    return HttpResponse(data,content_type="image/png")
+    return HttpResponse(data, content_type="image/png")
 
 
 # 首页
@@ -124,14 +123,14 @@ def index(request):
     current_page = request.GET.get("page")
     from utils import my_pagination
     url_prefix = request.path_info.strip('/')  # 去掉路由前缀两边的"/"
-    page_obj = my_pagination.Pagination(total_num, current_page, url_prefix, per_page_data_num=1)
+    page_obj = my_pagination.Pagination(total_num, current_page, url_prefix, per_page_data_num=2)
     article_list = article_list[page_obj.data_start:page_obj.data_end]
     page_html = page_obj.page_tool_html()
     return render(
         request,
         "index.html",
         {
-            "article_list":article_list,
+            "article_list": article_list,
             "page_html": page_html
         }
     )
@@ -140,7 +139,7 @@ def index(request):
 # 注册
 def register(request):
     if request.method == "POST":
-        ret = {"code":0}
+        ret = {"code": 0}
         form_obj = forms.RegisterForm(request.POST)
         if form_obj.is_valid():
             # 用户数据经过校验，没问题
@@ -148,7 +147,7 @@ def register(request):
             avatar_obj = request.FILES.get("avatar")
             print(avatar_obj)
             # 创建用户
-            form_obj.cleaned_data.pop("re_password","")
+            form_obj.cleaned_data.pop("re_password", "")
             models.UserInfo.objects.create_user(
                 avatar=avatar_obj,
                 **form_obj.cleaned_data
@@ -162,7 +161,7 @@ def register(request):
         return JsonResponse(ret)
 
     form_obj = forms.RegisterForm()
-    return render(request,"register.html",{"forms_obj":form_obj})
+    return render(request, "register.html", {"forms_obj": form_obj})
 
 
 # 注销
@@ -172,8 +171,7 @@ def logout(request):
 
 
 # 个人主页
-@login_required
-def home(request,username,*args):
+def home(request, username, *args):
     """
     点击文章作者名，跳转至个人主页
     :param request: 请求对象
@@ -181,7 +179,7 @@ def home(request,username,*args):
     :return:
     """
     # 去数据库中，根据用户名去找所有文章
-    user_obj = models.UserInfo.objects.filter(username=username).first() # QuerySet()对象转化为对象
+    user_obj = models.UserInfo.objects.filter(username=username).first()  # QuerySet()对象转化为对象
 
     if not user_obj:
         # 无此用户
@@ -221,13 +219,13 @@ def home(request,username,*args):
         elif args[0] == "tag":
             article_list = models.Article.objects.filter(tags__title=args[1])
         else:
-            year,month = args[1].split("-")
-            article_list = models.Article.objects.filter(create_time__year=year,create_time__month=month)
+            year, month = args[1].split("-")
+            article_list = models.Article.objects.filter(create_time__year=year, create_time__month=month)
 
     total_num = article_list.count()
     current_page = request.GET.get("page")
     from utils import my_pagination
-    url_prefix = request.path_info.strip('/') # 去掉路由前缀两边的"/"
+    url_prefix = request.path_info.strip('/')  # 去掉路由前缀两边的"/"
     page_obj = my_pagination.Pagination(total_num, current_page, url_prefix, per_page_data_num=1)
     article_list = article_list[page_obj.data_start:page_obj.data_end]
     page_html = page_obj.page_tool_html()
@@ -236,16 +234,16 @@ def home(request,username,*args):
         request,
         "home.html",
         {
-            "username":username,
-            "blog":blog,
-            "article_list":article_list,
-            "page_html":page_html
+            "username": username,
+            "blog": blog,
+            "article_list": article_list,
+            "page_html": page_html
         }
     )
 
 
 # 文章详情
-def article_detail(request,username,article_nid):
+def article_detail(request, username, article_nid):
     """
     文章详情视图
     :param request: 请求对象
@@ -267,16 +265,16 @@ def article_detail(request,username,article_nid):
         "article_detail.html",
         {
             "username": username,
-            "blog":blog,
-            "article":article_obj,
-            "comment_list":comment_list
+            "blog": blog,
+            "article": article_obj,
+            "comment_list": comment_list
         }
     )
 
 
 # 点赞/踩灭
 def updown(request):
-    ret = {"code": 0} # 0 正常操作 1 有误操作
+    ret = {"code": 0}  # 0 正常操作 1 有误操作
     is_up = request.POST.get("is_up")
     article_id = request.POST.get("article_id")
     user_id = request.POST.get("user_id")
@@ -284,7 +282,7 @@ def updown(request):
     is_up = True if is_up.upper() == "TRUE" else False
     print(is_up, article_id, user_id)
 
-    is_author = models.Article.objects.filter(user_id=user_id,nid=article_id)
+    is_author = models.Article.objects.filter(user_id=user_id, nid=article_id)
     if is_author:
         # 文章作者不可以操作点赞/踩灭
         ret["code"] = 1
@@ -314,7 +312,7 @@ def updown(request):
 
                     # 2、更新文章表中相对应的数据
                     if is_up:
-                        models.Article.objects.filter(nid=article_id).update(up_count=F("up_count")+1)
+                        models.Article.objects.filter(nid=article_id).update(up_count=F("up_count") + 1)
                     else:
                         models.Article.objects.filter(nid=article_id).update(up_count=F("down_count") + 1)
 
@@ -325,8 +323,34 @@ def updown(request):
     return JsonResponse(ret)
 
 
+# 提交评论
+def comment_commit(request):
+    ret = {"code": 0}
+    floor_num = request.POST.get("floor_num", "")
+    username = request.POST.get("username", "")
+    article_id = request.POST.get("article_id", "")
+    user_id = request.POST.get("user_id", "")
+    content = request.POST.get("content", "")
 
+    # 创建一条新评论记录
+    models.Comment.objects.create(
+        article_id=article_id,
+        user_id=user_id,
+        content=content
+    )
 
+    cur_comment_obj = models.Comment.objects.last()
 
-
-
+    from utils import comment_generator
+    comment_obj = comment_generator.CommentGenerator(
+        floor_num=floor_num,
+        username=username,
+        create_time=cur_comment_obj.create_time.strftime('%Y-%m-%d %X'),
+        content=content,
+        parent_comment=cur_comment_obj.parent_comment
+    )
+    if comment_obj:
+        coment_html = comment_obj.page_html()
+        ret["code"] = 1
+        ret["comment_html"] = coment_html
+    return JsonResponse(ret)

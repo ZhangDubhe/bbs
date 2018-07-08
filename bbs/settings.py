@@ -134,6 +134,9 @@ STATICFILES_DIRS = [
 # 引用Django自带的User表，继承使用时需要设置自定义的表名
 AUTH_USER_MODEL = "blog.UserInfo"
 
+# auth 给我们提供的一个装饰器工具，用来快捷的给某个视图添加登录校验。
+# 若用户没有登录，则会跳转到django默认的 登录URL '/accounts/login/ '
+LOGIN_URL = '/login/'  # 这里配置成你项目登录页面的路由
 
 # 用户上传的文件配置项
 MEDIA_URL = "/media/"

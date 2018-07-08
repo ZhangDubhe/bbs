@@ -31,10 +31,12 @@
         <hr>
         <ul class="list-group">
             {% for comment in comment_list %}
-                {% if comment.parent_comment%}
+
+                {% if comment.parent_comment %}
                     {# 如果存在父评论对象 #}
+                    <div>
                         <p>
-                            <span>#{{ forloop.counter }}楼</span>
+                            <span class="forloop_num">#{{ forloop.counter }}楼</span>
                             <span>{{ comment.create_time }}</span>
                             <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
                         </p>
@@ -42,14 +44,21 @@
                             <span>@{{ comment.parent_comment.user.username }}</span>
                             {{ comment.content }}
                         </p>
+                    </div>
+
                 {% else %}
-                    <p>
-                        <span>#{{ forloop.counter }}楼</span>
-                        <span>{{ comment.create_time }}</span>
-                        <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
-                    </p>
-                    <li class="list-group-item">{{ comment.content }}</li>
+                    <div>
+                        <p>
+                            <span class="forloop_num">#{{ forloop.counter }}楼</span>
+                            <span>{{ comment.create_time }}</span>
+                            <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
+                        </p>
+                        <li class="list-group-item">{{ comment.content }}</li>
+                    </div>
+
                 {% endif %}
+                {% empty %}
+                <div id="null_comment">这里空空如也，快来抢沙发把</div>
             {% endfor %}
         </ul>
     </div>
@@ -82,7 +91,7 @@
                 // 获取当前登录的用户
                 var userId = '{{ request.user.nid }}';
                 if (!userId) {
-                    // 为登录的用户
+                    // 未登录的用户
                     locations.href = "/login/";
                 } else {
                     // 登录的用户开始点赞操作
@@ -118,7 +127,52 @@
             });
 
             // 发表评论脚本
+            // 无父评论的思路：创建一条评论需要的参数，article_id，user_id和content
+            $("#comment_submit").on("click", function () {
+                var floor_num = +$(".forloop_num").last().text()[1];
+                if (!floor_num){
+                    // 第一名评论者的楼层
+                    floor_num = 1;
+                }else{
+                    floor_num += 1;
+                }
+                var articleId = '{{ article.nid }}';
+                var userId = '{{ request.user.nid }}';
+                var content = $("#commentBody").val();
+                if (content) {
+                    // 不能为空
+                    if (!userId) {
+                        // 未登录的用户
+                        locations.href = "/login/";
+                    } else {
+                        $.ajax({
+                            url: "/comment_commit/",
+                            type: "POST",
+                            data: {
+                                floor_num:floor_num,
+                                username:$("#userName").val(),
+                                article_id: articleId,
+                                user_id: userId,
+                                content: content
+                            },
+                            success: function (ret) {
+                                if (ret["code"]) {
+                                    // 若评论区无评论内容的提示语存在，则先清空
+                                    if ($("#null_comment").text()){
+                                        $("#null_comment").remove();
+                                    }
+                                    var curEle = $(".list-group");
+                                    var newEle = document.createElement("div");
+                                    $(newEle).html(ret["comment_html"]);
+                                    $(curEle).append(newEle);
+                                    $("#commentBody").val("");
+                                }
+                            }
+                        })
+                    }
+                }
 
+            })
         })
     </script>
 {% endblock page-js %}

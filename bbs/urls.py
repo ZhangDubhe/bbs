@@ -34,6 +34,10 @@ urlpatterns = [
 
     url(r'^blog/',include(blog_urls)), # 二级路由
     url(r'^updown/',views.updown),
+    url(r'^comment_commit/',views.comment_commit),
+
+    # 以上均匹配不上时，默认跳转至博客首页
+    url(r'^$',views.index)
 
 
 
