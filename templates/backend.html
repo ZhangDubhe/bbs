@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BBS管理后台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">操作</h3>
+                </div>
+                <div class="panel-body">
+                    <a href="/add_article/">添加新文章</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-10">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td>序号</td>
+                        <td>标题</td>
+                        <td>操作</td>
+                        <td>操作</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in article_list %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><a href="">{{ article.title }}</a></td>
+                            <td><input type="button" class="btn-warning" value="编辑" id=""></td>
+                            <td><input type="button" class="btn-danger" value="删除" id=""></td>
+                        </tr>
+                    {% endfor %}
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

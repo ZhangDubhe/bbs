@@ -2,7 +2,14 @@
 
 {% block page-css %}
     <link rel="stylesheet" href="/media/themes/{{ blog.theme }}">
-
+    <style>
+    .cc {
+        margin-left:30px;
+    }
+    .list-group>.cc {
+        margin-left:0;
+    }
+    </style>
 {% endblock page-css %}
 
 {% block page-main %}
@@ -30,38 +37,8 @@
         <h3>评论列表</h3>
         <hr>
         <ul class="list-group">
-            {% for comment in comment_list %}
+            {# 树形评论区 #}
 
-                {% if comment.parent_comment %}
-                    {# 如果存在父评论对象 #}
-                    <li class="list-group-item" c_id="{{ comment.nid }}">
-                        <p>
-                            <span class="forloop_num">#{{ forloop.counter }}楼</span>
-                            <span>{{ comment.create_time }}</span>
-                            <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
-                            <span class="pull-right comment_reply">回复</span>
-                        </p>
-                        <div>
-                            <p><span>@{{ comment.parent_comment.user.username }}</span></p>
-                            <p class="well well-sm">{{ comment.content }}</p>
-                        </div>
-                    </li>
-
-                {% else %}
-                    <li class="list-group-item" c_id="{{ comment.nid }}">
-                        <p>
-                            <span class="forloop_num">#{{ forloop.counter }}楼</span>
-                            <span>{{ comment.create_time }}</span>
-                            <a href="/blog/{{ comment.user.username }}">{{ comment.user.username }}</a>
-                            <span class="pull-right comment_reply">回复</span>
-                        </p>
-                        <p class="list-group-item">{{ comment.content }}</p>
-                    </li>
-
-                {% endif %}
-            {% empty %}
-                <div id="null_comment">这里空空如也，快来抢沙发把</div>
-            {% endfor %}
         </ul>
     </div>
     {# 评论区 结束 #}
@@ -82,7 +59,44 @@
 
 {% block page-js %}
     <script>
+
+
         $(document).ready(function () {
+            // 即时加载树形列表结构
+            (function () {
+                $.ajax({
+                    url: "/blog/get_all_comments/"+"{{ article.nid }}",
+                    success: function (res) {
+                        if (!res.code) {
+                            // 循环取出每一条评论
+                            $.each(res.data, function (k, v) {
+                                let louceng = k + 1;
+                                let time = v.create_time;
+                                let name = v.user__username;
+                                let commentVal = v.content;
+                                let id = v.nid;
+                                let liStr = `
+                            <li class="list-group-item cc" id='c-${id}'>
+                            <p class="small"><span>#${louceng}楼</span> <span>${time}</span>
+                                <a href="/blog/${name}/">${name}</a>
+                                <span class="pull-right comment_reply">回复</span>
+                                </p>
+                            <p>${commentVal}</p>
+                        </li>
+    `;
+                                // 如果是子评论
+                                let pid = v.parent_comment__nid;
+                                if (pid) {
+                                    $("#c-" + pid).append(liStr)
+                                } else {
+                                    $(".comment-list ul").append(liStr)
+                                }
+                            })
+                        }
+                    }
+                })
+            })();
+
             // 点赞/踩灭脚本
             $("#div_digg").on("click", ".dig", function () {
                 // 思路：创建一条点赞的记录，需要的数据：user_id,article_id,is_up
@@ -131,24 +145,22 @@
             // 发表评论脚本
             $("#comment_submit").on("click", function () {
                 {#var floor_num = +$(".forloop_num").last().text()[1];#}
-                var floor_num = $(".list-group>li").length;
+                let floor_num = $(".list-group>li").length;
                 if (!floor_num) {
                     // 第一名评论者的楼层
                     floor_num = 1;
                 } else {
                     floor_num += 1;
                 }
-                var articleId = '{{ article.nid }}';
-                var userId = '{{ request.user.nid }}';
-                var content = $("#commentBody").val();
-                var pid = $(this).data("pid");
-                alert(pid);
+                let articleId = '{{ article.nid }}';
+                let userId = '{{ request.user.nid }}';
+                let content = $("#commentBody").val();
+                let pid = $(this).data("pid");
                 if (pid) {
                     // 若是子评论，则内容进行切片处理，排除掉第一行的标识内容@xxx
-                    content = content.slice(content.indexOf("\n")+1);
+                    content = content.slice(content.indexOf("\n") + 1);
                 }
                 if (content) {
-                    console.log(userId);
                     // 不能为空
                     if (!userId) {
                         // 未登录的用户
@@ -171,10 +183,10 @@
                                     if ($("#null_comment").text()) {
                                         $("#null_comment").remove();
                                     }
-                                    var curEle = $(".list-group");
-                                    var newEle = document.createElement("li");
+                                    let curEle = $(".list-group");
+                                    let newEle = document.createElement("li");
                                     $(newEle).addClass("list-group-item");
-                                    $(newEle).attr("c_id",pid);
+                                    $(newEle).attr("c_id", pid);
                                     $(newEle).html(ret["comment_html"]);
                                     $(curEle).append(newEle);
                                     $("#commentBody").val("");
@@ -187,11 +199,11 @@
             });
 
             // 回复评论
-            $(".comment-list").on("click",".comment_reply", function () {
-                var parentCmtName = "@" + $(this).parent().find("a").text() + "\n";
+            $(".comment-list").on("click", ".comment_reply", function () {
+                let parentCmtName = "@" + $(this).parent().find("a").text() + "\n";
                 $("#commentBody").val(parentCmtName).focus();
                 // 在评论框下面的提交按钮记录一个标识，表明我是子评论,同时值为父评论的id
-                $("#comment_submit").data("pid", $(this).parent().parent().attr("c_id"));
+                $("#comment_submit").data("pid", $(this).parent().parent().attr("id").slice(2));
             })
         })
     </script>

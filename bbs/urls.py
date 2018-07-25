@@ -21,6 +21,9 @@ from django.conf import settings
 from blog import urls as blog_urls
 from django.conf.urls import include
 
+
+
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^login/',views.login),
@@ -36,11 +39,14 @@ urlpatterns = [
     url(r'^updown/',views.updown),
     url(r'^comment_commit/',views.comment_commit),
 
+
     # 以上均匹配不上时，默认跳转至博客首页
-    url(r'^$',views.index)
+    url(r'^$',views.index),
 
 
-
+    # 后台路由
+    url(r'^backend/',views.backend),
+    url(r'^add_article/',views.add_article)
 
 
 ]

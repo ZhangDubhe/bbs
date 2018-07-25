@@ -144,11 +144,15 @@ body{
 /* 点赞板块样式 结束 */
 
 /* 评论列表样式 开始 */
+
 .well>span {
     display: block;
 }
 .comment-list {
     clear: both;
+}
+.list-group-item .comment_reply:hover {
+    cursor:pointer;
 }
 /* 评论列表样式 结束 */
 

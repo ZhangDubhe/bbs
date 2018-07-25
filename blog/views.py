@@ -3,6 +3,7 @@ from blog import forms
 from django.contrib import auth
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 
 
 # 登录
@@ -241,8 +242,8 @@ def home(request, username, *args):
         }
     )
 
+# 文章详情_楼层结构
 
-# 文章详情
 def article_detail(request, username, article_nid):
     """
     文章详情视图
@@ -258,18 +259,35 @@ def article_detail(request, username, article_nid):
     blog = user_obj.blog
 
     # 评论列表返回
-    comment_list = models.Comment.objects.filter(article__nid=article_nid)
+    # comment_list = models.Comment.objects.filter(article__nid=article_nid)
 
     return render(
         request,
-        "article_detail.html",
+        # "article_detail.html",
+        "article_detail_tree.html",
         {
             "username": username,
             "blog": blog,
             "article": article_obj,
-            "comment_list": comment_list
+            # "comment_list": comment_list
         }
     )
+
+
+# 文章详情_树形结构
+def get_all_comments(request,article_id):
+    ret = {"code":0}
+    data = models.Comment.objects.filter(article_id=article_id).values(
+        "nid",
+        "create_time",
+        "user__username",
+        "content",
+        "parent_comment__nid"
+    )
+    ret["data"] = list(data)
+    return JsonResponse(ret)
+
+
 
 
 # 点赞/踩灭
@@ -331,13 +349,23 @@ def comment_commit(request):
     article_id = request.POST.get("article_id", "")
     user_id = request.POST.get("user_id", "")
     content = request.POST.get("content", "")
+    pid = request.POST.get("pid","")
 
     # 创建一条新评论记录
-    models.Comment.objects.create(
-        article_id=article_id,
-        user_id=user_id,
-        content=content
-    )
+    from django.db import transaction
+    with transaction.atomic():
+        # 1、先创建一个评论记录
+        models.Comment.objects.create(
+            article_id=article_id,
+            user_id=user_id,
+            content=content,
+            parent_comment_id=pid
+        )
+
+        # 2、更新文章表里的当前文章的评论数comment_count字段
+        models.Article.objects.filter(nid=article_id).update(
+            comment_count= F("comment_count") + 1
+        )
 
     cur_comment_obj = models.Comment.objects.last()
 
@@ -354,3 +382,25 @@ def comment_commit(request):
         ret["code"] = 1
         ret["comment_html"] = coment_html
     return JsonResponse(ret)
+
+
+# 后台-首页
+@login_required
+def backend(request):
+    # 查询当前用户的所有文章
+    article_list = models.Article.objects.filter(user=request.user)
+    return render(
+        request,
+        "backend.html",
+        {
+            "article_list":article_list
+        }
+    )
+
+
+# 后台-添加文章
+def add_article(request):
+    return render(
+        request,
+        "add_article.html"
+    )

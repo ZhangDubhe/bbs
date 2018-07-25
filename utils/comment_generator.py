@@ -23,6 +23,7 @@ class CommentGenerator:
                 <span class="forloop_num">#{0}楼</span>
                 <span>{1}</span>
                 <a href="/blog/{2}">{2}</a>
+                <span class="pull-right comment_reply">回复</span>
                 </p>
                 """.format(
             self.floor_num,
